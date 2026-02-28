@@ -43,8 +43,8 @@ app.withTypeProvider<ZodTypeProvider>().route({
   method: "GET",
   url: "/",
   schema: {
-    description: "Hello World",
-    tags: ["Hello World"],
+    description: "Hello World description",
+    tags: ["Hello World tag"],
     response: {
       200: z.object({
         message: z.string(),
