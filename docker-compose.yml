@@ -1,15 +1,63 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: bootcamp-treinos-api-postgres
+    container_name: bootcamp-treinos-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: bootcamp-treinos-api
+      POSTGRES_DB: bootcamp-treinos
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bootcamp-treinos"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: node:24-alpine
+    container_name: bootcamp-treinos-backend
+    working_dir: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/bootcamp-treinos
+      BETTER_AUTH_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+      - backend_node_modules:/app/node_modules
+      - backend_pnpm_store:/pnpm/store
+    command: sh -c "corepack enable && pnpm install && pnpm dev"
+
+  prisma-studio:
+    image: node:24-alpine
+    container_name: bootcamp-treinos-prisma-studio
+    working_dir: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/bootcamp-treinos
+    ports:
+      - "51212:51212"
+    volumes:
+      - ./:/app
+      - studio_node_modules:/app/node_modules
+      - studio_pnpm_store:/pnpm/store
+    command: sh -c "corepack enable && pnpm install && pnpm prisma studio --port 51212 --browser none"
 
 volumes:
   postgres_data:
+  backend_node_modules:
+  backend_pnpm_store:
+  studio_node_modules:
+  studio_pnpm_store:
