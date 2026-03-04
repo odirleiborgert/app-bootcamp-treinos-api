@@ -13,27 +13,28 @@ import {
   ErrorSchema,
   GetWorkoutDaySchema,
   GetWorkoutPlanSchema,
+  ListWorkoutPlansQuerySchema,
+  ListWorkoutPlansSchema,
   StartWorkoutSessionSchema,
   WorkoutPlanSchema,
 } from "../schemas/index.js";
 import { CreateWorkoutPlan } from "../usecases/CreateWorkoutPlan.js";
 import { GetWorkoutDay } from "../usecases/GetWorkoutDay.js";
 import { GetWorkoutPlan } from "../usecases/GetWorkoutPlan.js";
+import { ListWorkoutPlans } from "../usecases/ListWorkoutPlans.js";
 import { StartWorkoutSession } from "../usecases/StartWorkoutSession.js";
 
 export const workoutPlanRoutes = async (app: FastifyInstance) => {
   app.withTypeProvider<ZodTypeProvider>().route({
-    method: "POST",
+    method: "GET",
     url: "/",
     schema: {
       tags: ["Workout Plan"],
-      summary: "Create a workout plan",
-      body: WorkoutPlanSchema.omit({ id: true }),
+      summary: "List workout plans",
+      querystring: ListWorkoutPlansQuerySchema,
       response: {
-        201: WorkoutPlanSchema,
-        400: ErrorSchema,
+        200: ListWorkoutPlansSchema,
         401: ErrorSchema,
-        404: ErrorSchema,
         500: ErrorSchema,
       },
     },
@@ -48,21 +49,17 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
             code: "UNAUTHORIZED",
           });
         }
-        const createWorkoutPlan = new CreateWorkoutPlan();
-        const result = await createWorkoutPlan.execute({
+
+        const listWorkoutPlans = new ListWorkoutPlans();
+        const result = await listWorkoutPlans.execute({
           userId: session.user.id,
-          name: request.body.name,
-          workoutDays: request.body.workoutDays,
+          active: request.query.active,
         });
-        return reply.status(201).send(result);
+
+        return reply.status(200).send(result);
       } catch (error) {
         app.log.error(error);
-        if (error instanceof NotFoundError) {
-          return reply.status(404).send({
-            error: error.message,
-            code: "NOT_FOUND_ERROR",
-          });
-        }
+
         return reply.status(500).send({
           error: "Internal server error",
           code: "INTERNAL_SERVER_ERROR",
