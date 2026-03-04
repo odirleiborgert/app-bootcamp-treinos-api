@@ -11,6 +11,16 @@ export const StartWorkoutSessionSchema = z.object({
   userWorkoutSessionId: z.uuid(),
 });
 
+export const UpdateWorkoutSessionBodySchema = z.object({
+  completedAt: z.iso.datetime(),
+});
+
+export const UpdateWorkoutSessionSchema = z.object({
+  id: z.uuid(),
+  startedAt: z.iso.datetime(),
+  completedAt: z.iso.datetime(),
+});
+
 export const HomeDataSchema = z.object({
   activeWorkoutPlanId: z.uuid(),
   todayWorkoutDay: z.object({
@@ -18,7 +28,7 @@ export const HomeDataSchema = z.object({
     id: z.uuid(),
     name: z.string(),
     isRest: z.boolean(),
-    weekDay: z.string(),
+    weekDay: z.enum(WeekDay),
     estimatedDurationInSeconds: z.number(),
     coverImageUrl: z.url().optional(),
     exercisesCount: z.number(),
